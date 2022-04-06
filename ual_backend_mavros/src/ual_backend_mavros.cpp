@@ -287,7 +287,7 @@ void BackendMavros::recoverFromManual() {
     if (!mavros_state_.armed || mavros_state_.system_status != 4 ||
         ( (autopilot_type_==AutopilotType::PX4) ? (mavros_extended_state_.landed_state !=
         mavros_msgs::ExtendedState::LANDED_STATE_IN_AIR) : false) ) {
-        ROS_WARN("Unable to recover from manual mode (not flying!)");
+        ROS_WARN("Unable to recover from manual/mission mode (not flying!)");
         return;
     }
 
@@ -298,8 +298,9 @@ void BackendMavros::recoverFromManual() {
         mavros_state_.mode != "POSITION" &&
         mavros_state_.mode != "LOITER" &&
         mavros_state_.mode != "AUTO.LOITER" &&
-        mavros_state_.mode != "ALT_HOLD") {
-        ROS_WARN("Unable to recover from manual mode (not in manual!)");
+        mavros_state_.mode != "ALT_HOLD" &&
+        mavros_state_.mode != "AUTO") {
+        ROS_WARN("Unable to recover from manual/mission mode (not in manual!)");
         return;
     }
 
@@ -318,7 +319,7 @@ void BackendMavros::recoverFromManual() {
             return;
     }
 
-    ROS_INFO("Recovered from manual mode!");
+    ROS_INFO("Recovered from manual/mission mode!");
 }
 
 void BackendMavros::setHome(bool set_z) {
