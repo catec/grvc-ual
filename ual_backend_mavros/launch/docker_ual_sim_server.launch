@@ -10,21 +10,50 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 -->
 <launch>
 
-    <arg name="id" default="1"/>
+    <arg name="multi" default="false"/>
+    <arg name="ns_prefix" default="uav_"/>
+
     <arg name="ual_server" default="on"/>
     <arg name="ual_pub_rate" default="30.0"/>
 
-    <arg name="fcu_url" default="serial:///dev/ttyUSB0:921600"/>
+    <arg name="mode" default="sitl"/>
+    <arg name="id" default="1"/>
+    <arg name="robot_model" default="mbzirc"/>
+
     <arg name="pose_frame_id" default=""/><!-- To publish ual/pose in other frame than local, e.g. map -->
+    <arg name="mavros_offboard_rate" default="30.0"/>
     <arg name="position_th" default="0.33"/>
     <arg name="orientation_th" default="0.65"/>
     <arg name="hold_pose_time" default="3.0"/>
 
-    <node pkg="ual_backend_mavlink" type="ual_backend_mavlink_server" name="ual" output="screen">
-        <param name="uav_id" value="$(arg id)"/>
+    <arg name="description_package" default="robots_description"/>
+    <arg name="material" default="Orange"/>
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="0"/>
+    <arg name="yaw" default="0"/>
+    <arg name="frame_id" default="map"/>
+    <arg name="append_xacro_args" default=""/>
+    <arg name="simulate_safety_pilot" default="true"/>
+
+    <arg name="fcu_url" default="udp://:14550@localhost:14556"/>
+    <arg name="gcs_url" default="udp://@localhost"/>
+    <arg name="rtcm_topic" default=""/>
+    <arg name="use_mavros" default="true"/>
+    <arg name="remap_mavros_tf" default="true"/>
+    <arg name="mavros_config_pkg" default="px4_bringup"/>
+
+    <!-- Run mavros node -->
+    <node pkg="px4_bringup" type="run_mavros.py" name="run_mavros_$(arg id)" output="screen" if="$(arg use_mavros)"
+    args="-id=$(arg id) -mode=$(arg mode) -fcu_url=$(arg fcu_url) -gcs_url=$(arg gcs_url) -rtcm_topic=$(arg rtcm_topic)
+            -remap_tfs=$(arg remap_mavros_tf) -mavros_config_pkg=$(arg mavros_config_pkg)" />
+
+    <!-- Launch UAL server for uav id=1 -->
+    <node pkg="ual_backend_mavros" type="ual_backend_mavros_server" name="ual" output="screen" unless="$(arg multi)">
+        <param name="uav_id" value="1"/>
         <param name="ual_server" value="$(arg ual_server)"/>
         <param name="ual_pub_rate" value="$(arg ual_pub_rate)"/>
-        <param name="fcu_url" value="$(arg fcu_url)"/>
+        <param name="mavros_offboard_rate" value="$(arg mavros_offboard_rate)"/>
         <param name="position_th" value="$(arg position_th)"/>
         <param name="orientation_th" value="$(arg orientation_th)"/>
         <param name="hold_pose_time" value="$(arg hold_pose_time)"/>
