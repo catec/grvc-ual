@@ -120,6 +120,7 @@ def main():
         # Create sdf from urdf
         temp_sdf = temp_dir + "/" + args.model + ".sdf"
         subprocess.call("gz sdf -p " + temp_urdf + " > " + temp_sdf, shell=True)
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     elif model_file_type == "sdf":
         model_sdf = description_dir + "/models/" + args.model + "/" + model_file

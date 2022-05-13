@@ -33,7 +33,7 @@ def main():
     subprocess.call("sudo apt-get remove modemmanager", shell=True)
     subprocess.call("sudo apt-get install -y libyaml-cpp-dev", shell=True)
     subprocess.call("sudo apt-get install -y net-tools", shell=True)
-
+    subprocess.call("sudo apt-get install -y iputils-ping", shell=True)
 
 if __name__ == "__main__":
     main()

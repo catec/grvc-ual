@@ -14,8 +14,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <arg name="ual_server" default="on"/>
     <arg name="ual_pub_rate" default="30.0"/>
 
-    <arg name="mode" default="serial"/>
-    <arg name="fcu_url" default="udp://:14550@localhost:14556"/>
+    <arg name="mode" default="custom"/>
+    <arg name="fcu_url" default="serial:///dev/ttyACM0:921600"/>
     <arg name="gcs_url" default=""/>
     <arg name="rtcm_topic" default=""/>
 

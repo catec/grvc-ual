@@ -17,6 +17,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <arg name="ual_pub_rate" default="30.0"/>
 
     <arg name="mode" default="sitl"/>
+    <arg name="id" default="1"/>
     <arg name="robot_model" default="mbzirc"/>
 
     <arg name="pose_frame_id" default=""/><!-- To publish ual/pose in other frame than local, e.g. map -->
@@ -24,6 +25,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <arg name="position_th" default="0.33"/>
     <arg name="orientation_th" default="0.65"/>
     <arg name="hold_pose_time" default="3.0"/>
+
+    <arg name="description_package" default="robots_description"/>
+    <arg name="material" default="Orange"/>
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="0"/>
+    <arg name="yaw" default="0"/>
+    <arg name="frame_id" default="map"/>
+    <arg name="append_xacro_args" default=""/>
+    <arg name="simulate_safety_pilot" default="true"/>
+
+    <arg name="fcu_url" default="udp://:14550@localhost:14556"/>
+    <arg name="gcs_url" default="udp://@localhost"/>
+    <arg name="rtcm_topic" default=""/>
+    <arg name="use_mavros" default="true"/>
+    <arg name="remap_mavros_tf" default="true"/>
+    <arg name="mavros_config_pkg" default="px4_bringup"/>
 
     <group if="$(eval mode=='sitl')">
         <!-- Launch Gazebo simulation -->
@@ -50,6 +68,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         <arg name="yaw" value="0"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
     </include>
+
+        <!-- Run mavros node -->
+    <node pkg="px4_bringup" type="run_mavros.py" name="run_mavros_$(arg id)" output="screen" if="$(arg use_mavros)"
+    args="-id=$(arg id) -mode=$(arg mode) -fcu_url=$(arg fcu_url) -gcs_url=$(arg gcs_url) -rtcm_topic=$(arg rtcm_topic)
+            -remap_tfs=$(arg remap_mavros_tf) -mavros_config_pkg=$(arg mavros_config_pkg)" />
+
 
 
 </launch>

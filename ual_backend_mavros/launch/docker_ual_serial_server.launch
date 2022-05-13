@@ -16,7 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <arg name="ual_server" default="on"/>
     <arg name="ual_pub_rate" default="30.0"/>
 
-    <arg name="mode" default="sitl"/>
+    <arg name="mode" default="custom"/>
     <arg name="id" default="1"/>
     <arg name="robot_model" default="mbzirc"/>
 
@@ -36,18 +36,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <arg name="append_xacro_args" default=""/>
     <arg name="simulate_safety_pilot" default="true"/>
 
-    <arg name="fcu_url" default="udp://:14550@localhost:14556"/>
-    <arg name="gcs_url" default="udp://@localhost"/>
+    <arg name="fcu_url" default="serial:///dev/ttyS0:921600"/>
+    <arg name="gcs_url" default=""/>
     <arg name="rtcm_topic" default=""/>
     <arg name="use_mavros" default="true"/>
     <arg name="remap_mavros_tf" default="true"/>
     <arg name="mavros_config_pkg" default="px4_bringup"/>
 
-    <!-- Run mavros node 
+    <!-- Run mavros node -->
     <node pkg="px4_bringup" type="run_mavros.py" name="run_mavros_$(arg id)" output="screen" if="$(arg use_mavros)"
     args="-id=$(arg id) -mode=$(arg mode) -fcu_url=$(arg fcu_url) -gcs_url=$(arg gcs_url) -rtcm_topic=$(arg rtcm_topic)
             -remap_tfs=$(arg remap_mavros_tf) -mavros_config_pkg=$(arg mavros_config_pkg)" />
-    -->
 
     <!-- Launch UAL server for uav id=1 -->
     <node pkg="ual_backend_mavros" type="ual_backend_mavros_server" name="ual" output="screen" unless="$(arg multi)">
