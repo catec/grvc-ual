@@ -85,7 +85,7 @@ class SafetyPilot:
             self.joy_is_connected = True
 
         self.joy_handle.update(data)
-        # print self.joy_handle  # DEBUG
+        # print (self.joy_handle)  # DEBUG
         self.rc_simulation.set_channel(1, 1500 + 600*self.joy_handle.get_action_axis('throttle'))
         self.rc_simulation.set_channel(2, 1500 + 600*self.joy_handle.get_action_axis('yaw'))
         self.rc_simulation.set_channel(3, 1500 + 600*self.joy_handle.get_action_axis('pitch'))

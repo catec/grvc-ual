@@ -52,7 +52,7 @@ def main():
     if args.add_model_path:
         gz_env['GAZEBO_MODEL_PATH'] += ':' + args.add_model_path
 
-    # print "gz_env['GAZEBO_MODEL_PATH'] = [%s]" % gz_env['GAZEBO_MODEL_PATH']  # debug
+    # print ("gz_env['GAZEBO_MODEL_PATH'] = [%s]" % gz_env['GAZEBO_MODEL_PATH'])  # debug
 
     # Get map origin lat-lon-alt from rosparam
     rospy.init_node('gazebo_world')

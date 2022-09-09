@@ -41,7 +41,7 @@ class JoyTeleop:
 
     def joy_callback(self, data):
         self.joy_handle.update(data)
-        # print self.joy_handle  # DEBUG
+        # print (self.joy_handle)  # DEBUG
         if self.joy_handle.get_action_button('secure'):
             if self.joy_handle.get_action_button_state('take_off') is ButtonState.JUST_PRESSED and self.ual_state.state == State.LANDED_ARMED:
                 rospy.loginfo("Taking off")

@@ -56,16 +56,16 @@ def track_waypoints():
         go_to_waypoint = rospy.ServiceProxy(go_to_waypoint_url, GoToWaypoint)
 
         # TODO: Check we're flying!
-        print "Ready to track " + str(len(wp_list)) + " waypoints from " + file_url
+        print ("Ready to track " + str(len(wp_list)) + " waypoints from " + file_url)
         if args.wait_for == 'path' or args.wait_for == 'wp':
             answer = raw_input("Continue? (y/N): ").lower().strip()
             if answer != 'y' and answer != 'yes':
-                print "Aborted"
+                print ("Aborted")
                 return
 
         for waypoint in wp_list:
-            print "Go to waypoint:"
-            print waypoint
+            print ("Go to waypoint:")
+            print (waypoint)
             go_to_waypoint(waypoint, True)
             if args.wait_for == 'wp':
                 raw_input("Arrived. Press Enter to continue...")
@@ -73,7 +73,7 @@ def track_waypoints():
         return
 
     except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
+        print ("Service call failed: %s"%e)
 
 
 if __name__ == "__main__":
