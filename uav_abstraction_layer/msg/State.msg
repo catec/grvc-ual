@@ -7,3 +7,4 @@ uint8 FLYING_MANUAL   = 5
 uint8 LANDING         = 6
 
 uint8 state
+string name
