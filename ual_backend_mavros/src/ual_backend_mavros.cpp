@@ -70,6 +70,7 @@ BackendMavros::BackendMavros()
     std::string mavros_ns = "mavros";
     std::string set_mode_srv = mavros_ns + "/set_mode";
     std::string arming_srv = mavros_ns + "/cmd/arming";
+    std::string set_vel_cmd_frame_srv = mavros_ns + "/setpoint_velocity/mav_frame";
     std::string get_param_srv = mavros_ns + "/param/get";
     std::string set_pose_topic = mavros_ns + "/setpoint_position/local";
     std::string set_pose_global_topic = mavros_ns + "/setpoint_raw/global";
@@ -87,6 +88,7 @@ BackendMavros::BackendMavros()
 
     flight_mode_client_ = nh.serviceClient<mavros_msgs::SetMode>(set_mode_srv.c_str());
     arming_client_ = nh.serviceClient<mavros_msgs::CommandBool>(arming_srv.c_str());
+    vel_cmd_frame_client_ = nh.serviceClient<mavros_msgs::SetMavFrame>(set_vel_cmd_frame_srv.c_str());
 
     mavros_ref_pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(set_pose_topic.c_str(), 1);
     mavros_ref_pose_global_pub_ = nh.advertise<mavros_msgs::GlobalPositionTarget>(set_pose_global_topic.c_str(), 1);
@@ -175,6 +177,7 @@ void BackendMavros::offboardThreadLoop(){
     ros::Rate rate(offboard_thread_frequency_);
     while (ros::ok()) {
         switch(control_mode_){
+        case eControlMode::BODY_VEL:
         case eControlMode::LOCAL_VEL:
             // Check consistency of velocity data (isnan?) before sending to the autopilot
             if ( std::isnan(ref_vel_.twist.linear.x) || std::isnan(ref_vel_.twist.linear.y) || std::isnan(ref_vel_.twist.linear.z) ||
@@ -281,6 +284,28 @@ void BackendMavros::setFlightMode(const std::string& _flight_mode) {
 #endif
         ROS_INFO("Trying to set [%s] mode; mavros_state_.mode = [%s]", _flight_mode.c_str(), mavros_state_.mode.c_str());
     }
+}
+
+bool BackendMavros::setVelCmdFrame(const std::string& _mav_frame) {
+    mavros_msgs::SetMavFrame set_mav_frame_service;
+
+    if (_mav_frame == "base_link") {
+        set_mav_frame_service.request.mav_frame = set_mav_frame_service.request.FRAME_BODY_NED;
+    }
+    else {
+        set_mav_frame_service.request.mav_frame = set_mav_frame_service.request.FRAME_LOCAL_NED;
+    }
+
+    auto srv_result = vel_cmd_frame_client_.call(set_mav_frame_service);
+
+    if (!srv_result)
+    {
+      ROS_ERROR("Error in set velocity_cmd mav_frame to [%s]", _mav_frame.c_str());
+      return false;
+    }
+
+    ROS_INFO("Set velocity_cmd mav_frame to [%s] successfully", _mav_frame.c_str());
+    return true;
 }
 
 void BackendMavros::recoverFromManual() {
@@ -476,7 +501,6 @@ void BackendMavros::land() {
 }
 
 void BackendMavros::setVelocity(const Velocity& _vel) {
-    control_mode_ = eControlMode::LOCAL_VEL;  // Velocity control!
     is_pose_pid_enabled_ = false;
 
     geometry_msgs::Vector3Stamped vel_in, vel_out;
@@ -486,9 +510,30 @@ void BackendMavros::setVelocity(const Velocity& _vel) {
 
     if (vel_frame_id == "map" || vel_frame_id == "" || vel_frame_id == uav_home_frame_id_) {
         // No transform is needed
+        if (control_mode_ != eControlMode::LOCAL_VEL)
+        {
+            auto success = setVelCmdFrame(vel_frame_id);
+            if(!success)
+                return;
+
+            control_mode_ = eControlMode::LOCAL_VEL;
+        }
+        ref_vel_ = _vel;
+    }
+    else if (vel_frame_id == "base_link") {
+        if (control_mode_ != eControlMode::BODY_VEL)
+        {
+            auto success = setVelCmdFrame(vel_frame_id);
+            if(!success)
+                return;
+
+            control_mode_ = eControlMode::BODY_VEL;
+        }
         ref_vel_ = _vel;
     }
     else {
+        control_mode_ = eControlMode::LOCAL_VEL;
+
         // We need to transform
         geometry_msgs::TransformStamped transform;
         bool tf_exists = true;

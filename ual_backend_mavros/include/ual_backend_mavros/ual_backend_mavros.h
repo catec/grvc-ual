@@ -32,6 +32,7 @@
 //Mavros services
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
+#include <mavros_msgs/SetMavFrame.h>
 
 //Mavros messages
 #include <mavros_msgs/State.h>
@@ -169,6 +170,7 @@ private:
     void initPosePID();
     bool referencePoseReached();
     void setFlightMode(const std::string& _flight_mode);
+    bool setVelCmdFrame(const std::string& _mav_frame);
     double updateParam(const std::string& _param_id);
     State guessState();
     bool takeOffPX4(double _height);
@@ -188,7 +190,7 @@ private:
     mavros_msgs::ExtendedState  mavros_extended_state_;
 
     //Control
-    enum class eControlMode {LOCAL_VEL, LOCAL_POSE, GLOBAL_POSE, NONE};
+    enum class eControlMode {LOCAL_VEL, LOCAL_POSE, GLOBAL_POSE, BODY_VEL, NONE};
     eControlMode control_mode_ = eControlMode::NONE;
     bool mavros_has_pose_ = false;
     bool mavros_has_geo_pose_ = false;
@@ -203,6 +205,7 @@ private:
     /// Ros Communication
     ros::ServiceClient flight_mode_client_;
     ros::ServiceClient arming_client_;
+    ros::ServiceClient vel_cmd_frame_client_;
     ros::ServiceClient get_param_client_;
     ros::Publisher mavros_ref_pose_pub_;
     ros::Publisher mavros_ref_pose_global_pub_;
