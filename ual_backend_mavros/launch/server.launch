@@ -25,19 +25,49 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <arg name="orientation_th" default="0.65"/>
     <arg name="hold_pose_time" default="3.0"/>
 
+	<arg name="autopilot" default="px4" />
+	<arg name="fcu_protocol" default="v2.0" />
+    <arg name="pluginlists_yaml" value="$(find ual_backend_mavros)/config/apm_pluginlists.yaml" />
+    <arg name="config_yaml" value="$(find ual_backend_mavros)/config/apm_config.yaml" />
+
     <!-- Launch robots. Argument mode can be:
         - serial: for serial connection to px4 (fcu_url=serial:///dev/ttyUSB0:921600)
         - sitl: for software in the loop simulation
         - custom: to fully customize fcu and gcs urls
     -->
     <!-- Launch mavros -->
-    <include file="$(find px4_bringup)/launch/spawn_robot.launch">
-        <arg name="id" value="$(arg id)"/>
-        <arg name="mode" value="$(arg mode)"/>
-        <arg name="fcu_url" value="$(arg fcu_url)"/>
-        <arg name="gcs_url" value="$(arg gcs_url)"/>
-        <arg name="rtcm_topic" default="$(arg rtcm_topic)"/>
-    </include>
+    <group if="$(eval autopilot == 'px4')">
+        <include file="$(find px4_bringup)/launch/spawn_robot.launch">
+            <arg name="id" value="$(arg id)"/>
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value="$(arg gcs_url)"/>
+            <arg name="rtcm_topic" default="$(arg rtcm_topic)"/>
+        </include>
+    </group>
+
+    <group if="$(eval autopilot == 'apm')">
+    	<node pkg="mavros" type="mavros_node" name="mavros" required="true"
+              clear_params="true" output="screen" respawn="false">
+            <param name="fcu_url" value="$(arg fcu_url)" />
+            <param name="gcs_url" value="$(arg gcs_url)" />
+            <param name="fcu_protocol" value="$(arg fcu_protocol)" />
+
+            <!-- load blacklist, config -->
+            <rosparam command="load" file="$(arg pluginlists_yaml)" />
+            <rosparam command="load" file="$(arg config_yaml)" />
+
+            <!-- <remap from="/mavros/setpoint_position/local" to="/move_base_simple/goal" /> -->
+            <!-- <remap from="/mavros/setpoint_velocity/cmd_vel_unstamped" to="/cmd_vel" /> -->
+            <!-- <remap from="/mavros/vision_pose/pose" to="/robot_pose" /> -->
+	    </node>
+
+        <!-- To be able to flight in guided mode -->
+        <node pkg="rostopic" type="rostopic" name="mavros_set_gp"
+        args="pub /mavros/global_position/set_gp_origin geographic_msgs/GeoPointStamped
+            '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: 'camera1'},
+            position: {latitude: -35.363261, longitude: 149.16523, altitude: 583.0}}'" output="screen"/>
+    </group>
 
     <!-- Launch UAL server -->
     <node pkg="ual_backend_mavros" type="ual_backend_mavros_server" name="ual" output="screen">
@@ -53,7 +83,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         <!-- Define home pose relative to global map frame -->
         <rosparam param="home_pose">[0, 0, 0]</rosparam><!-- [x,y,z] -->
         <!-- Define the global map frame geo position and let the UAL estimate the relative home pose -->
-        <!-- <rosparam param="map_origin_geo">[37.558542, -5.931074, 7.89]</rosparam> --><!-- [lat,lon,alt] -->
+        <!-- <rosparam param="map_origin_geo">[-35.363261, 149.16523, 583]</rosparam> --><!-- [lat,lon,alt] -->
         <!-- PID params for Ardupilot setPose pose control -->
         <rosparam file="$(find ual_backend_mavros)/config/pid.yaml" />
     </node>
