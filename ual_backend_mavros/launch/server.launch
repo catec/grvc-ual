@@ -65,8 +65,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         <!-- To be able to flight in guided mode -->
         <node pkg="rostopic" type="rostopic" name="mavros_set_gp"
         args="pub /mavros/global_position/set_gp_origin geographic_msgs/GeoPointStamped
-            '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: 'camera1'},
-            position: {latitude: -35.363261, longitude: 149.16523, altitude: 583.0}}'" output="screen"/>
+            '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: 'world'},
+            position: {latitude: -35.363261, longitude: 149.16523, altitude: 583.0}}' -r 1" output="screen"/>
     </group>
 
     <!-- Launch UAL server -->
