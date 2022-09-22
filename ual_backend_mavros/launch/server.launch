@@ -57,16 +57,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             <rosparam command="load" file="$(arg pluginlists_yaml)" />
             <rosparam command="load" file="$(arg config_yaml)" />
 
-            <!-- <remap from="/mavros/setpoint_position/local" to="/move_base_simple/goal" /> -->
             <!-- <remap from="/mavros/setpoint_velocity/cmd_vel_unstamped" to="/cmd_vel" /> -->
             <!-- <remap from="/mavros/vision_pose/pose" to="/robot_pose" /> -->
 	    </node>
 
-        <!-- To be able to flight in guided mode -->
-        <node pkg="rostopic" type="rostopic" name="mavros_set_gp"
-        args="pub /mavros/global_position/set_gp_origin geographic_msgs/GeoPointStamped
-            '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: 'world'},
-            position: {latitude: -35.363261, longitude: 149.16523, altitude: 583.0}}' -r 1" output="screen"/>
+        <!-- To be able to flight in guided mode its neccesary set home and origin -->
+        <!-- <node pkg="ual_backend_mavros" type="apm_set_home.py" name="apm_set_home" output="screen">
+            <param name="origin_lat" value="374318092"/>
+            <param name="origin_lon" value="-5.8592880"/>
+            <param name="origin_alt" value="163000"/>
+        </node> -->
     </group>
 
     <!-- Launch UAL server -->
