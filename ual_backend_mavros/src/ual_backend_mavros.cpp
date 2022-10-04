@@ -324,7 +324,9 @@ void BackendMavros::recoverFromManual() {
         mavros_state_.mode != "LOITER" &&
         mavros_state_.mode != "AUTO.LOITER" &&
         mavros_state_.mode != "ALT_HOLD" &&
-        mavros_state_.mode != "AUTO") {
+        mavros_state_.mode != "AUTO" &&
+        mavros_state_.mode != "AUTO.MISSION" &&
+        mavros_state_.mode != "CIRCLE") {
         ROS_WARN("Unable to recover from manual/mission mode (not in manual!)");
         return;
     }
