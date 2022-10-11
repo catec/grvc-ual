@@ -97,7 +97,8 @@ UAL::UAL(Backend* _backend) {
                 nh.advertiseService<TakeOff::Request, TakeOff::Response>(
                 take_off_srv,
                 [this](TakeOff::Request &req, TakeOff::Response &res) {
-                return this->takeOff(req.height, req.blocking);
+                res.success = this->takeOff(req.height, req.blocking);
+                return res.success;
             });
             ros::ServiceServer land_service =
                 nh.advertiseService<Land::Request, Land::Response>(

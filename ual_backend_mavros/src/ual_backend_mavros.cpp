@@ -355,11 +355,11 @@ void BackendMavros::setHome(bool set_z) {
         cur_pose_.pose.position.y, z_offset);
 }
 
-void BackendMavros::takeOff(double _height) {
+bool BackendMavros::takeOff(double _height) {
     is_pose_pid_enabled_ = false;
     if (_height < 0.0) {
         ROS_ERROR("Takeoff height must be positive!");
-        return;
+        return false;
     }
     calling_takeoff_ = true;
     bool takeoff_result = false;
@@ -373,7 +373,7 @@ void BackendMavros::takeOff(double _height) {
             break;
         default:
             ROS_ERROR("BackendMavros [%d]: Wrong autopilot type", robot_id_);
-            return;
+            return false;
     }
 
     if (takeoff_result) {
@@ -383,6 +383,8 @@ void BackendMavros::takeOff(double _height) {
 
     // Update state right now!
     this->state_ = guessState();
+
+    return true;
 }
 
 bool BackendMavros::takeOffPX4(double _height) {

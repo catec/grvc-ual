@@ -151,7 +151,7 @@ public:
     // void trackPath(const Path& _path) override;
     /// Perform a take off maneuver
     /// \param _height target height that must be reached to consider the take off complete
-    void    takeOff(double _height) override;
+    bool    takeOff(double _height) override;
     /// Land on the current position.
     void	land() override;
     /// Set velocities

@@ -1,3 +1,4 @@
 float32 height
 bool blocking
 ---
+bool success
