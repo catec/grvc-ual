@@ -1017,8 +1017,8 @@ void BackendMavros::initHomeFrame() {
         }
     }
 
-    static_tf_broadcaster_ = new tf2_ros::StaticTransformBroadcaster();
-    static_tf_broadcaster_->sendTransform(static_transformStamped);
+    // static_tf_broadcaster_ = new tf2_ros::StaticTransformBroadcaster();
+    // static_tf_broadcaster_->sendTransform(static_transformStamped);
 }
 
 double BackendMavros::updateParam(const std::string& _param_id) {

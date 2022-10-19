@@ -222,7 +222,7 @@ private:
     std::string pose_frame_id_;
     std::string uav_home_frame_id_;
     std::string uav_frame_id_;
-    tf2_ros::StaticTransformBroadcaster * static_tf_broadcaster_;
+    // tf2_ros::StaticTransformBroadcaster * static_tf_broadcaster_;
     std::map <std::string, geometry_msgs::TransformStamped> cached_transforms_;
     std::map<std::string, double> mavros_params_;
     Eigen::Vector3d local_start_pos_;

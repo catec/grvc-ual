@@ -146,7 +146,7 @@ UAL::UAL(Backend* _backend) {
             ros::Publisher odometry_pub = nh.advertise<nav_msgs::Odometry>(odometry_topic, 10);
             ros::Publisher state_pub = nh.advertise<uav_abstraction_layer::State>(state_topic, 10);
             ros::Publisher ref_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(ref_pose_topic, 10);
-            static tf2_ros::TransformBroadcaster tf_pub;
+            // static tf2_ros::TransformBroadcaster tf_pub;
 
             // Publish @ 30Hz default
             double ual_pub_rate;
@@ -157,7 +157,7 @@ UAL::UAL(Backend* _backend) {
                 velocity_pub.publish(this->velocity());
                 odometry_pub.publish(this->odometry());
                 state_pub.publish(this->state());
-                tf_pub.sendTransform(this->transform());
+                // tf_pub.sendTransform(this->transform());
                 ref_pose_pub.publish(this->referencePose()); //!TODO: publish only during position control?
                 loop_rate.sleep();
             }
