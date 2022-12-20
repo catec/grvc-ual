@@ -202,7 +202,6 @@ install(DIRECTORY
   #list of directories
   launch
   config
-  scripts
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
