@@ -150,7 +150,6 @@ install(FILES
 install(DIRECTORY
   config
   launch
-  scripts
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
@@ -160,10 +159,14 @@ install(DIRECTORY
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(PROGRAMS
+  scripts/launch_gzworld.py
+  scripts/run_mavros.py
+  scripts/run_px4sitl.py
+  scripts/spawn_gzmodel.py
+  scripts/utils.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables and/or libraries for installation
 # install(TARGETS px4_bringup px4_bringup_node
