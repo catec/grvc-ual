@@ -96,7 +96,7 @@ public:
 
     /// Perform a take off maneuver
     /// \param _height target height that must be reached to consider the take off complete
-    virtual void    takeOff(double _height) = 0;
+    virtual bool    takeOff(double _height) = 0;
     /// Land on the current position.
     virtual void	land() = 0;
     /// Set velocities

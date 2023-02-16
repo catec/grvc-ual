@@ -97,7 +97,8 @@ UAL::UAL(Backend* _backend) {
                 nh.advertiseService<TakeOff::Request, TakeOff::Response>(
                 take_off_srv,
                 [this](TakeOff::Request &req, TakeOff::Response &res) {
-                return this->takeOff(req.height, req.blocking);
+                res.success = this->takeOff(req.height, req.blocking);
+                return res.success;
             });
             ros::ServiceServer land_service =
                 nh.advertiseService<Land::Request, Land::Response>(
@@ -392,6 +393,39 @@ inline void UAL::validateOrientation(geometry_msgs::Quaternion& _q) {
     }
     // TODO: Other checks? E.g. yaw-only orientation shoud have x = y = 0
     // ROS_INFO("q = [%lf, %lf, %lf, %lf]", _q.x, _q.y, _q.z, _q.w);  // Debug!
+}
+
+const std::string UAL::stateNumberToString(const State _state_number) const {
+    std::string state_name = "UNINITIALIZED";
+
+    switch (_state_number)
+    {
+    case 0:
+      state_name = "UNINITIALIZED";
+      break;
+    case 1:
+      state_name = "LANDED_DISARMED";
+      break;
+    case 2:
+      state_name = "LANDED_ARMED";
+      break;
+    case 3:
+      state_name = "TAKING_OFF";
+      break;
+    case 4:
+      state_name = "FLYING_AUTO";
+      break;
+    case 5:
+      state_name = "FLYING_MANUAL";
+      break;
+    case 6:
+      state_name = "LANDING";
+      break;
+    default:
+      break;
+    }
+
+    return state_name;
 }
 
 }}	// namespace grvc::ual

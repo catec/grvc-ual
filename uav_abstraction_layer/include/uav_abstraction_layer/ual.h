@@ -62,6 +62,7 @@ public:
     uav_abstraction_layer::State state() {
         uav_abstraction_layer::State output;
         output.state = backend_->state();
+        output.name = stateNumberToString(output.state);
         return output;
     }
 
@@ -109,6 +110,7 @@ protected:
     bool id_is_unique_;
 
     void validateOrientation(geometry_msgs::Quaternion& _q);
+    const std::string stateNumberToString(const State _state_number) const;
 };
 
 }}	// namespace grvc::ual

@@ -70,6 +70,7 @@ BackendMavros::BackendMavros()
     std::string mavros_ns = "mavros";
     std::string set_mode_srv = mavros_ns + "/set_mode";
     std::string arming_srv = mavros_ns + "/cmd/arming";
+    std::string set_vel_cmd_frame_srv = mavros_ns + "/setpoint_velocity/mav_frame";
     std::string get_param_srv = mavros_ns + "/param/get";
     std::string set_pose_topic = mavros_ns + "/setpoint_position/local";
     std::string set_pose_global_topic = mavros_ns + "/setpoint_raw/global";
@@ -87,6 +88,7 @@ BackendMavros::BackendMavros()
 
     flight_mode_client_ = nh.serviceClient<mavros_msgs::SetMode>(set_mode_srv.c_str());
     arming_client_ = nh.serviceClient<mavros_msgs::CommandBool>(arming_srv.c_str());
+    vel_cmd_frame_client_ = nh.serviceClient<mavros_msgs::SetMavFrame>(set_vel_cmd_frame_srv.c_str());
 
     mavros_ref_pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(set_pose_topic.c_str(), 1);
     mavros_ref_pose_global_pub_ = nh.advertise<mavros_msgs::GlobalPositionTarget>(set_pose_global_topic.c_str(), 1);
@@ -175,6 +177,7 @@ void BackendMavros::offboardThreadLoop(){
     ros::Rate rate(offboard_thread_frequency_);
     while (ros::ok()) {
         switch(control_mode_){
+        case eControlMode::BODY_VEL:
         case eControlMode::LOCAL_VEL:
             // Check consistency of velocity data (isnan?) before sending to the autopilot
             if ( std::isnan(ref_vel_.twist.linear.x) || std::isnan(ref_vel_.twist.linear.y) || std::isnan(ref_vel_.twist.linear.z) ||
@@ -283,11 +286,33 @@ void BackendMavros::setFlightMode(const std::string& _flight_mode) {
     }
 }
 
+bool BackendMavros::setVelCmdFrame(const std::string& _mav_frame) {
+    mavros_msgs::SetMavFrame set_mav_frame_service;
+
+    if (_mav_frame == "base_link") {
+        set_mav_frame_service.request.mav_frame = set_mav_frame_service.request.FRAME_BODY_NED;
+    }
+    else {
+        set_mav_frame_service.request.mav_frame = set_mav_frame_service.request.FRAME_LOCAL_NED;
+    }
+
+    auto srv_result = vel_cmd_frame_client_.call(set_mav_frame_service);
+
+    if (!srv_result)
+    {
+      ROS_ERROR("Error in set velocity_cmd mav_frame to [%s]", _mav_frame.c_str());
+      return false;
+    }
+
+    ROS_INFO("Set velocity_cmd mav_frame to [%s] successfully", _mav_frame.c_str());
+    return true;
+}
+
 void BackendMavros::recoverFromManual() {
     if (!mavros_state_.armed || mavros_state_.system_status != 4 ||
         ( (autopilot_type_==AutopilotType::PX4) ? (mavros_extended_state_.landed_state !=
         mavros_msgs::ExtendedState::LANDED_STATE_IN_AIR) : false) ) {
-        ROS_WARN("Unable to recover from manual mode (not flying!)");
+        ROS_WARN("Unable to recover from manual/mission mode (not flying!)");
         return;
     }
 
@@ -298,8 +323,11 @@ void BackendMavros::recoverFromManual() {
         mavros_state_.mode != "POSITION" &&
         mavros_state_.mode != "LOITER" &&
         mavros_state_.mode != "AUTO.LOITER" &&
-        mavros_state_.mode != "ALT_HOLD") {
-        ROS_WARN("Unable to recover from manual mode (not in manual!)");
+        mavros_state_.mode != "ALT_HOLD" &&
+        mavros_state_.mode != "AUTO" &&
+        mavros_state_.mode != "AUTO.MISSION" &&
+        mavros_state_.mode != "CIRCLE") {
+        ROS_WARN("Unable to recover from manual/mission mode (not in manual!)");
         return;
     }
 
@@ -318,7 +346,7 @@ void BackendMavros::recoverFromManual() {
             return;
     }
 
-    ROS_INFO("Recovered from manual mode!");
+    ROS_INFO("Recovered from manual/mission mode!");
 }
 
 void BackendMavros::setHome(bool set_z) {
@@ -327,11 +355,11 @@ void BackendMavros::setHome(bool set_z) {
         cur_pose_.pose.position.y, z_offset);
 }
 
-void BackendMavros::takeOff(double _height) {
+bool BackendMavros::takeOff(double _height) {
     is_pose_pid_enabled_ = false;
     if (_height < 0.0) {
         ROS_ERROR("Takeoff height must be positive!");
-        return;
+        return false;
     }
     calling_takeoff_ = true;
     bool takeoff_result = false;
@@ -345,7 +373,7 @@ void BackendMavros::takeOff(double _height) {
             break;
         default:
             ROS_ERROR("BackendMavros [%d]: Wrong autopilot type", robot_id_);
-            return;
+            return false;
     }
 
     if (takeoff_result) {
@@ -355,6 +383,8 @@ void BackendMavros::takeOff(double _height) {
 
     // Update state right now!
     this->state_ = guessState();
+
+    return true;
 }
 
 bool BackendMavros::takeOffPX4(double _height) {
@@ -475,7 +505,6 @@ void BackendMavros::land() {
 }
 
 void BackendMavros::setVelocity(const Velocity& _vel) {
-    control_mode_ = eControlMode::LOCAL_VEL;  // Velocity control!
     is_pose_pid_enabled_ = false;
 
     geometry_msgs::Vector3Stamped vel_in, vel_out;
@@ -485,9 +514,30 @@ void BackendMavros::setVelocity(const Velocity& _vel) {
 
     if (vel_frame_id == "map" || vel_frame_id == "" || vel_frame_id == uav_home_frame_id_) {
         // No transform is needed
+        if (control_mode_ != eControlMode::LOCAL_VEL)
+        {
+            auto success = setVelCmdFrame(vel_frame_id);
+            if(!success)
+                return;
+
+            control_mode_ = eControlMode::LOCAL_VEL;
+        }
+        ref_vel_ = _vel;
+    }
+    else if (vel_frame_id == "base_link") {
+        if (control_mode_ != eControlMode::BODY_VEL)
+        {
+            auto success = setVelCmdFrame(vel_frame_id);
+            if(!success)
+                return;
+
+            control_mode_ = eControlMode::BODY_VEL;
+        }
         ref_vel_ = _vel;
     }
     else {
+        control_mode_ = eControlMode::LOCAL_VEL;
+
         // We need to transform
         geometry_msgs::TransformStamped transform;
         bool tf_exists = true;
