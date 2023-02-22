@@ -26,8 +26,8 @@ def save_waypoints():
     rospy.Subscriber(pose_url, PoseStamped, pose_callback)
 
     # Saved waypoints file name
-    file_name = raw_input("Enter saved waypoints file name (leave empty to use default): ")
-    if file_name is '':
+    file_name = input("Enter saved waypoints file name (leave empty to use default): ")
+    if file_name == '':
         file_name = 'wp_default.yaml'
 
     # Autocomplete file extension
@@ -36,7 +36,7 @@ def save_waypoints():
 
     # Check we are actually receiving pose
     rospy.loginfo('Reading pose from: %s', pose_url)
-    if current_pose.header.frame_id is '':
+    if current_pose.header.frame_id == '':
         rospy.logerr('Unable to read pose, assure it is being published!')
         return
 
@@ -53,7 +53,7 @@ def save_waypoints():
     rospy.loginfo('Waypoints will be saved to: %s', file_url)
 
     for wp_id in range(1000):
-        if raw_input("Press Enter to save current pose or q to quit... ") is 'q':
+        if input("Press Enter to save current pose or q to quit... ") == 'q':
             break
 
         # print(current_pose) # debug!

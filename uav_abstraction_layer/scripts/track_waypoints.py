@@ -58,7 +58,7 @@ def track_waypoints():
         # TODO: Check we're flying!
         print ("Ready to track " + str(len(wp_list)) + " waypoints from " + file_url)
         if args.wait_for == 'path' or args.wait_for == 'wp':
-            answer = raw_input("Continue? (y/N): ").lower().strip()
+            answer = input("Continue? (y/N): ").lower().strip()
             if answer != 'y' and answer != 'yes':
                 print ("Aborted")
                 return
@@ -68,11 +68,11 @@ def track_waypoints():
             print (waypoint)
             go_to_waypoint(waypoint, True)
             if args.wait_for == 'wp':
-                raw_input("Arrived. Press Enter to continue...")
+                input("Arrived. Press Enter to continue...")
 
         return
 
-    except rospy.ServiceException, e:
+    except rospy.ServiceException as e:
         print ("Service call failed: %s"%e)
 
 
