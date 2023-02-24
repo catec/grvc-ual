@@ -14,8 +14,15 @@ def track_waypoints():
                         help='Name of the package where plan to track is stored')
     parser.add_argument('-plan_file', type=str, default='wp_default.yaml',
                         help='Name of the file inside plan_package/plans')
-    parser.add_argument('-wait_for', type=str, default='path',
+    parser.add_argument('-wait_for', type=str, default='none',
                         help='Wait for human response: [none]/[path]/[wp]')
+    
+    parser.add_argument('-auto_takeoff', type=bool, default=True,
+                        help='Takeoff automatically before tracking waypoints')
+
+    parser.add_argument('-auto_land', type=bool, default=True,
+                        help='Land automatically after tracking waypoints')
+
     args, unknown = parser.parse_known_args()
     # utils.check_unknown_args(unknown)
 
@@ -26,7 +33,13 @@ def track_waypoints():
     if not file_name.endswith('.yaml'):
         file_name = file_name + '.yaml'
 
-    file_url = rospkg.RosPack().get_path(args.plan_package) + '/plans/' + file_name
+    if file_name.startswith('/'):
+        file_url = file_name
+    else:
+        file_url = rospkg.RosPack().get_path(args.plan_package) + '/plans/' + file_name
+
+    file_name = file_url.split('/')[-1]
+
     with open(file_url, 'r') as wp_file:
         wp_data = yaml.load(wp_file)
 
@@ -55,8 +68,24 @@ def track_waypoints():
     try:
         go_to_waypoint = rospy.ServiceProxy(go_to_waypoint_url, GoToWaypoint)
 
-        # TODO: Check we're flying!
-        print ("Ready to track " + str(len(wp_list)) + " waypoints from " + file_url)
+        # Take off - retry if failed
+        if args.auto_takeoff:
+            take_off_url = 'ual/take_off'
+            rospy.wait_for_service(take_off_url)
+            take_off = rospy.ServiceProxy(take_off_url, TakeOff)
+            print ("Taking off...")
+            while not rospy.is_shutdown():
+                try :
+                    take_off(wp_list[0].pose.position.z , True)
+                    break
+                except rospy.ServiceException as e:
+                    print ("Service call failed: %s"%e)
+                    print ("Retrying...")
+                    rospy.sleep(1.0)
+
+        # Track waypoints
+        print ("Starting to track " + str(len(wp_list)) + " waypoints from " + file_name)
+                
         if args.wait_for == 'path' or args.wait_for == 'wp':
             answer = input("Continue? (y/N): ").lower().strip()
             if answer != 'y' and answer != 'yes':
@@ -70,7 +99,14 @@ def track_waypoints():
             if args.wait_for == 'wp':
                 input("Arrived. Press Enter to continue...")
 
+        # Land
+        land_url = 'ual/land'
+        rospy.wait_for_service(land_url)
+        land = rospy.ServiceProxy(land_url, Land)
+        land(True) # Blocking - wait for landing to finish
+
         return
+    
 
     except rospy.ServiceException as e:
         print ("Service call failed: %s"%e)
