@@ -32,8 +32,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
     <!-- Launch mavros -->
 	<include file="$(find mavros)/launch/node.launch">
-		<arg name="pluginlists_yaml" value="$(find grvc-ual)/launch/apm_pluginlists.yaml" />
-		<arg name="config_yaml" value="$(find grvc-ual)/launch/apm_config.yaml" />
+		<arg name="pluginlists_yaml" value="$(find ual_backend_mavros)/config/apm_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find ual_backend_mavros)/config/apm_config.yaml" />
 
 		<arg name="fcu_url" value="$(arg fcu_url)" />
 		<arg name="gcs_url" value="$(arg gcs_url)" />
