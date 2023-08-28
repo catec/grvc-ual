@@ -175,8 +175,7 @@ private:
     State guessState();
     bool takeOffPX4(double _height);
     bool takeOffAPM(double _height);
-    void goToWaypointPX4(const Waypoint& _wp);
-    void goToWaypointAPM(const Waypoint& _wp);
+    void goToWaypoint_PP(const Waypoint& _wp);
 
     //WaypointList path_;
     geometry_msgs::PoseStamped  ref_pose_;

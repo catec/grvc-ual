@@ -654,7 +654,6 @@ void BackendMavros::setPose(const geometry_msgs::PoseStamped& _world) {
             pose_pid_->reference(ref_pose_);
             is_pose_pid_enabled_ = true;
             last_command_time_ = ros::Time::now();
-            // control_mode_ = eControlMode::LOCAL_VEL;
             control_mode_ = eControlMode::LOCAL_POSE;
             break;
         default:
@@ -720,7 +719,6 @@ PurePursuitOutput PurePursuit(geometry_msgs::Point _current, geometry_msgs::Poin
 
 void BackendMavros::goToWaypoint(const Waypoint& _world) {
 
-    is_pose_pid_enabled_ = false;
     geometry_msgs::PoseStamped homogen_world_pos;
     std::string waypoint_frame_id = tf2::getFrameId(_world);
 
@@ -758,10 +756,19 @@ void BackendMavros::goToWaypoint(const Waypoint& _world) {
 
     switch (autopilot_type_) {
         case AutopilotType::PX4:
-            goToWaypointPX4(homogen_world_pos);
+            is_pose_pid_enabled_ = false;
+            goToWaypoint_PP(homogen_world_pos);
             break;
         case AutopilotType::APM:
-            goToWaypointAPM(homogen_world_pos);
+            is_pose_pid_enabled_ = true;
+
+            setVelCmdFrame("");  
+            pose_pid_->reset();
+            pose_pid_->reference(cur_pose_);
+            last_command_time_ = ros::Time::now();
+            control_mode_ = eControlMode::LOCAL_POSE;
+
+            goToWaypoint_PP(homogen_world_pos);
             break;
         default:
             ROS_ERROR("BackendMavros [%d]: Wrong autopilot type", robot_id_);
@@ -769,7 +776,7 @@ void BackendMavros::goToWaypoint(const Waypoint& _world) {
     }
 }
 
-void BackendMavros::goToWaypointPX4(const Waypoint& _wp) {
+void BackendMavros::goToWaypoint_PP(const Waypoint& _wp) {
 
     // Smooth pose reference passing!
     geometry_msgs::Point final_position = _wp.pose.position;
@@ -786,10 +793,29 @@ void BackendMavros::goToWaypointPX4(const Waypoint& _wp) {
     float linear_distance  = sqrt(ab_x*ab_x + ab_y*ab_y + ab_z*ab_z);
     float linear_threshold = sqrt(position_th_);
     if (linear_distance > linear_threshold) {
-        float mpc_xy_vel_max   = updateParam("MPC_XY_VEL_MAX");
-        float mpc_z_vel_max_up = updateParam("MPC_Z_VEL_MAX_UP");
-        float mpc_z_vel_max_dn = updateParam("MPC_Z_VEL_MAX_DN");
-        float mc_yawrate_max   = updateParam("MC_YAWRATE_MAX");
+
+        float mpc_xy_vel_max;
+        float mpc_z_vel_max_up;
+        float mpc_z_vel_max_dn;
+        float mc_yawrate_max;
+
+        if(autopilot_type_==AutopilotType::PX4)
+        {
+            mpc_xy_vel_max   = updateParam("MPC_XY_VEL_MAX");
+            mpc_z_vel_max_up = updateParam("MPC_Z_VEL_MAX_UP");
+            mpc_z_vel_max_dn = updateParam("MPC_Z_VEL_MAX_DN");
+            mc_yawrate_max   = updateParam("MC_YAWRATE_MAX");
+        } 
+        else if(autopilot_type_==AutopilotType::APM){
+            mpc_xy_vel_max   = 0.01*updateParam("WPNAV_SPEED");
+            mpc_z_vel_max_up = 0.01*updateParam("WPNAV_SPEED_UP");
+            mpc_z_vel_max_dn = 0.01*updateParam("WPNAV_SPEED_DN");
+            mc_yawrate_max   = 200.0;
+        } else{
+            ROS_ERROR("BackendMavros [%d]: Wrong autopilot type", robot_id_);
+            return;
+        }
+
 
         float mpc_z_vel_max = (ab_z > 0)? mpc_z_vel_max_up : mpc_z_vel_max_dn;
         float xy_distance = sqrt(ab_x*ab_x + ab_y*ab_y);
@@ -822,7 +848,14 @@ void BackendMavros::goToWaypointPX4(const Waypoint& _wp) {
             wp_i.pose.orientation.x = q_i.x();
             wp_i.pose.orientation.y = q_i.y();
             wp_i.pose.orientation.z = q_i.z();
+
             ref_pose_.pose = wp_i.pose;
+
+            if(is_pose_pid_enabled_){
+                pose_pid_->reference(ref_pose_);
+            }
+            
+            
             next_to_final_distance = (1.0 - pp.t_lookahead) * linear_distance;
             // ROS_INFO("next_to_final_distance = %f", next_to_final_distance);
             rate.sleep();
@@ -845,33 +878,6 @@ void BackendMavros::goToWaypointPX4(const Waypoint& _wp) {
     // Freeze in case it's been aborted
     if (abort_ && freeze_) {
         ref_pose_ = cur_pose_;
-    }
-}
-
-void BackendMavros::goToWaypointAPM(const Waypoint& _wp) {
-
-    ref_pose_ = _wp;
-    ref_vel_.twist.linear.x = 0;
-    ref_vel_.twist.linear.y = 0;
-    ref_vel_.twist.linear.z = 0;
-    ref_vel_.twist.angular.z = 0;
-    control_mode_ = eControlMode::NONE;
-
-    ref_pose_.header.stamp = ros::Time::now();
-    mavros_ref_pose_pub_.publish(ref_pose_);
-
-    // Reset error buffers    
-    position_error_.reset();
-    orientation_error_.reset();
-
-    // Wait until we arrive: abortable
-    while(!referencePoseReached() && !abort_ && ros::ok()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-    // Freeze in case it's been aborted
-    if (abort_ && freeze_) {
-        ref_pose_ = cur_pose_;
-        control_mode_ = eControlMode::LOCAL_POSE;    // Control in position
     }
 }
 
