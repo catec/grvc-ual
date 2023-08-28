@@ -210,6 +210,7 @@ private:
     ros::Publisher mavros_ref_pose_pub_;
     ros::Publisher mavros_ref_pose_global_pub_;
     ros::Publisher mavros_ref_vel_pub_;
+    ros::Publisher control_mode_pub_;
     ros::Subscriber mavros_cur_pose_sub_;
     ros::Subscriber mavros_cur_geo_pose_sub_;
     ros::Subscriber mavros_cur_vel_sub_;

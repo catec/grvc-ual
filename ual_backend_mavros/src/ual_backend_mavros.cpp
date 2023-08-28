@@ -31,6 +31,7 @@
 #include <mavros_msgs/CommandTOL.h>
 #include <mavros_msgs/VehicleInfoGet.h>
 #include <mavros/utils.h>
+#include <std_msgs/UInt8.h>
 
 #define FIRMWARE_VERSION_TYPE_DEV 0 /* development release | */
 #define FIRMWARE_VERSION_TYPE_ALPHA 64 /* alpha release | */
@@ -93,14 +94,13 @@ BackendMavros::BackendMavros()
     mavros_ref_pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(set_pose_topic.c_str(), 1);
     mavros_ref_pose_global_pub_ = nh.advertise<mavros_msgs::GlobalPositionTarget>(set_pose_global_topic.c_str(), 1);
     mavros_ref_vel_pub_ = nh.advertise<geometry_msgs::TwistStamped>(set_vel_topic.c_str(), 1);
+    
+    control_mode_pub_ = nh.advertise<std_msgs::UInt8>("/ual/control_mode", 1);
 
     mavros_cur_pose_sub_ = nh.subscribe<geometry_msgs::PoseStamped>(pose_topic.c_str(), 1, \
         [this](const geometry_msgs::PoseStamped::ConstPtr& _msg) {
             this->cur_pose_ = *_msg;
             this->mavros_has_pose_ = true;
-            if (is_pose_pid_enabled_) {
-                ref_vel_ = pose_pid_->update(cur_pose_);
-            }
     });
     mavros_cur_vel_sub_ = nh.subscribe<geometry_msgs::TwistStamped>(vel_topic_local.c_str(), 1, \
         [this](const geometry_msgs::TwistStamped::ConstPtr& _msg) {
@@ -190,13 +190,33 @@ void BackendMavros::offboardThreadLoop(){
                 ref_vel_.twist.angular.y = 0;
                 ref_vel_.twist.angular.z = 0;
             }
-            mavros_ref_vel_pub_.publish(ref_vel_);
-            if (!is_pose_pid_enabled_) {
+            
+            // if (!is_pose_pid_enabled_) {
+            //     ref_pose_ = cur_pose_;
+            // }
+
+            // Hold current pose if not receiving new commands
+            if (ros::Time::now().toSec() - last_command_time_.toSec() >=0.5){
+                ref_vel_.twist.linear.x = 0;
+                ref_vel_.twist.linear.y = 0;
+                ref_vel_.twist.linear.z = 0;
+                ref_vel_.twist.angular.x = 0;
+                ref_vel_.twist.angular.y = 0;
+                ref_vel_.twist.angular.z = 0;
+
+                setVelCmdFrame("");  
+
                 ref_pose_ = cur_pose_;
-            }
-            if ( ros::Time::now().toSec() - last_command_time_.toSec() >=0.5 ) {
+                pose_pid_->reset();
+                pose_pid_->reference(cur_pose_);
+                is_pose_pid_enabled_ = true;
+
                 control_mode_ = eControlMode::LOCAL_POSE;
-            }
+            } 
+
+            mavros_ref_vel_pub_.publish(ref_vel_);
+
+
             break;
         case eControlMode::LOCAL_POSE:
             // Check consistency of pose data (isnan?) before sending to the autopilot
@@ -207,11 +227,20 @@ void BackendMavros::offboardThreadLoop(){
                 ref_pose_ = cur_pose_;
             }
             ref_pose_.header.stamp = ros::Time::now();
-            mavros_ref_pose_pub_.publish(ref_pose_);
-            ref_vel_.twist.linear.x = 0;
-            ref_vel_.twist.linear.y = 0;
-            ref_vel_.twist.linear.z = 0;
-            ref_vel_.twist.angular.z = 0;
+
+            if (autopilot_type_==AutopilotType::PX4){
+                mavros_ref_pose_pub_.publish(ref_pose_);
+                ref_vel_.twist.linear.x = 0;
+                ref_vel_.twist.linear.y = 0;
+                ref_vel_.twist.linear.z = 0;
+                ref_vel_.twist.angular.z = 0;
+            }
+
+            else if(autopilot_type_==AutopilotType::APM && is_pose_pid_enabled_) {
+                ref_vel_ = pose_pid_->update(cur_pose_);
+                mavros_ref_vel_pub_.publish(ref_vel_);            
+            }
+
             break;
         case eControlMode::GLOBAL_POSE:
             ref_vel_.twist.linear.x = 0;
@@ -248,6 +277,10 @@ void BackendMavros::offboardThreadLoop(){
 
         // State update
         this->state_ = guessState();
+
+        std_msgs::UInt8 control_mode_msg;
+        control_mode_msg.data = static_cast<uint8_t>(control_mode_);
+        control_mode_pub_.publish(control_mode_msg);
 
         rate.sleep();
     }
@@ -616,11 +649,13 @@ void BackendMavros::setPose(const geometry_msgs::PoseStamped& _world) {
             // Control in velocity with PID
             if (!is_pose_pid_enabled_) {
                 pose_pid_->reset();
+                setVelCmdFrame(""); 
             }
             pose_pid_->reference(ref_pose_);
             is_pose_pid_enabled_ = true;
             last_command_time_ = ros::Time::now();
-            control_mode_ = eControlMode::LOCAL_VEL;
+            // control_mode_ = eControlMode::LOCAL_VEL;
+            control_mode_ = eControlMode::LOCAL_POSE;
             break;
         default:
             ROS_ERROR("BackendMavros [%d]: Wrong autopilot type", robot_id_);
@@ -903,6 +938,10 @@ Pose BackendMavros::pose() {
 }
 
 Pose BackendMavros::referencePose() {
+
+
+    return ref_pose_;
+
     Pose out;
 
     out.pose.position.x = ref_pose_.pose.position.x + local_start_pos_[0];
