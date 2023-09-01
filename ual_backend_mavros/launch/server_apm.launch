@@ -17,7 +17,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	<arg name="tgt_component" default="1" />
 	<arg name="log_output" default="screen" />
 	<arg name="fcu_protocol" default="v2.0" />
-	<arg name="respawn_mavros" default="false" />
+	<arg name="respawn_mavros" default="true" />
 
     <!-- UAL Settings -->
     <arg name="id" default="1"/>
