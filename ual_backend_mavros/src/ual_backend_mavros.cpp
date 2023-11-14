@@ -1110,7 +1110,10 @@ void BackendMavros::initHomeFrame() {
         catch (tf2::TransformException &ex) {
             ROS_WARN("In initHomeFrame: %s. Publishing static TF in ENU.", ex.what());
         }
-    }
+    } else if (parent_frame == "")
+        return;   
+    
+
 
     static_tf_broadcaster_ = new tf2_ros::StaticTransformBroadcaster();
     static_tf_broadcaster_->sendTransform(static_transformStamped);

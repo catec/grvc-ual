@@ -54,6 +54,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         <param name="orientation_th" value="$(arg orientation_th)"/>
         <param name="hold_pose_time" value="$(arg hold_pose_time)"/>
         <param name="pose_frame_id" value="$(arg pose_frame_id)"/>
+
+        <!-- Publish the static tf from home_pose_parent_frame to odom. If left empty, tf is not published -->
         <param name="home_pose_parent_frame" value="map"/><!-- default= map -->
         <!-- Define home pose relative to global map frame -->
         <rosparam param="home_pose">[0, 0, 0]</rosparam><!-- [x,y,z] -->
