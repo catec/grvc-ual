@@ -127,10 +127,27 @@
   <!-- Macro to add the gps plugin. -->
   <xacro:macro name="gps_plugin_macro" params="namespace gps_noise">
     <gazebo>
-      <plugin name='gps_plugin' filename='libgazebo_gps_plugin.so'>
-        <robotNamespace>${namespace}</robotNamespace>
-        <gpsNoise>${gps_noise}</gpsNoise>
-      </plugin>
+      <model name="gps">
+        <link name="gps_link">
+          <pose>0 0 0 0 0 0</pose>
+          <sensor name='gps' type='gps'>
+            <pose>0 0 0 0 0 0</pose>
+            <update_rate>5.0</update_rate>
+            <always_on>true</always_on>
+            <visualize>false</visualize>
+            <plugin name='gps_plugin' filename='libgazebo_gps_plugin.so'>
+              <robotNamespace></robotNamespace>
+              <gpsNoise>${gps_noise}</gpsNoise>
+              <gpsXYRandomWalk>2.0</gpsXYRandomWalk>
+              <gpsZRandomWalk>4.0</gpsZRandomWalk>
+              <gpsXYNoiseDensity>2.0e-4</gpsXYNoiseDensity>
+              <gpsZNoiseDensity>4.0e-4</gpsZNoiseDensity>
+              <gpsVXYNoiseDensity>0.2</gpsVXYNoiseDensity>
+              <gpsVZNoiseDensity>0.4</gpsVZNoiseDensity>
+            </plugin>
+          </sensor>
+        </link>
+      </model>
       <plugin name='magnetometer_plugin' filename='libgazebo_magnetometer_plugin.so'>
         <robotNamespace/>
         <pubRate>20</pubRate>
