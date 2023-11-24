@@ -21,7 +21,7 @@ You can find detailed instructions for installation and how to use the UAL in th
 ### [PX4](https://github.com/PX4/Firmware)
 
  * Via [ual_backend_mavros](https://github.com/grvcTeam/grvc-ual/wiki/Backend-MAVROS) and [ual_backend_mavlink](https://github.com/grvcTeam/grvc-ual/wiki/Backend-MAVLink)
- * In simulation (SITL): version [v1.10.*](https://github.com/PX4/Firmware/tree/v1.10.1)
+ * In simulation (SITL): version [1.14.*](https://github.com/PX4/PX4-Autopilot/commit/329a2d0e98)
  * Flying: versions from [v1.7.3](https://github.com/PX4/Firmware/tree/v1.7.3) to [v1.10.1](https://github.com/PX4/Firmware/tree/v1.10.1)
  * [Instructions to setup the SITL](https://github.com/grvcTeam/grvc-ual/wiki/Setup-instructions:-PX4-SITL)
 
