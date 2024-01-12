@@ -228,8 +228,16 @@ def main():
     " -Y " + str(spawn_yaw) + \
     " __name:=spawn_" + args.model + "_" + str(args.id)
     rospy.sleep(args.id)
-    subprocess.call(gzmodel_args, shell=True)
-    rospy.loginfo('Model spawned')
+    # subprocess.call(gzmodel_args, shell=True)
+    # rospy.loginfo('Model spawned')
+    proc = subprocess.Popen(gzmodel_args, shell=True)
+    proc.wait()
+    (stdout, stderr) = proc.communicate()
+    
+    if proc.returncode != 0:
+        rospy.logerr(stderr)
+    else:
+        rospy.loginfo('Model spawned!')
 
 if __name__ == "__main__":
     main()
