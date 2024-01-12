@@ -1000,9 +1000,8 @@ void BackendMavros::initHomeFrame() {
     local_start_pos_ << 0.0, 0.0, 0.0;
 
     // Get frame prefix from namespace
-    std::string ns = ros::this_node::getNamespace();
-    uav_frame_id_ = ns + "/base_link";
-    uav_home_frame_id_ = ns + "/odom";
+    uav_frame_id_ = "/base_link";
+    uav_home_frame_id_ = "/odom";
     while (uav_frame_id_[0]=='/') {
         uav_frame_id_.erase(0,1);
     }
